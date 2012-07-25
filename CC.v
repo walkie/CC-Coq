@@ -10,10 +10,16 @@ Definition tag  := bool.
 Definition L : tag := true.
 Definition R : tag := false.
 
+(* Choice calculus *)
 Inductive cc : Type :=
   | leaf : nat -> cc
   | node : nat -> cc -> cc -> cc
   | chc  : dim -> cc -> cc -> cc.
+
+(* Object language *)
+Inductive tree : Type :=
+  | t_leaf : nat -> tree
+  | t_node : nat -> tree -> tree -> tree.
 
 End Syntax.
 
@@ -24,21 +30,29 @@ End Syntax.
 Section Semantics.
 
 Definition selection  := dim -> tag.
-Definition denotation := selection -> cc.
 
-Fixpoint sem (e:cc) : denotation := fun s =>
-  match e with
-    | leaf a     => leaf a
-    | node a l r => node a (sem l s) (sem r s)
-    | chc  d l r => if s d then sem l s else sem r s
-  end.
-
+(* Set s(d)=t in selection s. *)
 Definition sel (t:tag) (d:dim) (s:selection) : selection :=
   fun d' => if beq_nat d d' then t else s d'.
+
+(* Select d.R in all dimensions in the given list, d.L otherwise. *)
 Definition selR : list dim -> selection :=
   fold_right (sel R) (fun _ => L).
+
+(* Select d.L in all dimensions in the given list, d.R otherwise. *)
 Definition selL : list dim -> selection :=
   fold_right (sel L) (fun _ => R).
+
+
+Definition denotation := selection -> tree.
+
+(* Choice calculus semantics *)
+Fixpoint sem (e:cc) : denotation := fun s =>
+  match e with
+    | leaf a     => t_leaf a
+    | node a l r => t_node a (sem l s) (sem r s)
+    | chc  d l r => if s d then sem l s else sem r s
+  end.
 
 End Semantics.
 
@@ -139,6 +153,7 @@ End Transform.
 
 
 
+(* Some example expressions. *)
 Section Examples.
 
 Definition A : dim := 1.
@@ -148,22 +163,24 @@ Definition e1 := node 4 (chc A (leaf 7) (leaf 8)) (leaf 9).
 Definition e2 := chc A e1 (leaf 10).
 Definition e3 := chc B e2 e1.
 
-(* tests *)
+Definition nll a b c := t_node a (t_leaf b) (t_leaf c).
+
+(* Some simple sanity checks. *)
 Example sem_e1 :
-  sem e1 (selR nil)        :: sem e1 (selL nil)        :: nil =
-  node 4 (leaf 7) (leaf 9) :: node 4 (leaf 8) (leaf 9) :: nil.
+  sem e1 (selR nil) :: sem e1 (selL nil) :: nil =
+  nll 4 7 9         :: nll 4 8 9         :: nil.
 Proof. compute. reflexivity. Qed.
 
 Example sem_e2 :
-  sem e2 (selR nil)        :: sem e2 (selL nil) :: nil =
-  node 4 (leaf 7) (leaf 9) :: (leaf 10)         :: nil.
+  sem e2 (selR nil) :: sem e2 (selL nil) :: nil =
+  nll 4 7 9         :: (t_leaf 10)       :: nil.
 Proof. compute. reflexivity. Qed.
 
 Example sem_e3 :
   sem e3 (selR nil)        :: sem e3 (selR (A :: nil)) :: 
   sem e3 (selR (B :: nil)) :: sem e3 (selL nil)        :: nil =
-  node 4 (leaf 7) (leaf 9) :: (leaf 10)                ::
-  node 4 (leaf 7) (leaf 9) :: node 4 (leaf 8) (leaf 9) :: nil.
+  nll 4 7 9                :: (t_leaf 10)              ::
+  nll 4 7 9                :: nll 4 8 9                :: nil.
 Proof. compute. reflexivity. Qed.
 
 End Examples.
