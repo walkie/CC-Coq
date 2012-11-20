@@ -71,7 +71,7 @@ Section TypeSystem.
   (* Typing environment G: Var -> CT. *)
   Definition tenv := partial_map CT.
 
-  (* CTuration typing rules *)
+  (* Configuration typing rules *)
   Inductive hasType (D:denv) (G:tenv) : CC -> CT -> Prop :=
     | CT_Leaf : forall a,
                 hasType D G (Leaf a) Full
