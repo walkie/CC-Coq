@@ -95,7 +95,6 @@ Proof.
 
 (* C-C-Swap for the case when the nested choice appears in the
    left alternative of the simpler form. *)
-:w
 Theorem ccSwapL d d' e1 e2 e3 :
   chc d' (chc d e1 e3) (chc d e2 e3) <=> chc d (chc d' e1 e2) e3.
 Proof.
