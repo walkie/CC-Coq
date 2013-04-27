@@ -57,12 +57,13 @@ Fixpoint sem (e:cc) : denotation := fun s =>
 End Semantics.
 
 
-(* Proofs of the semantics preserving transformation laws from the
-   TOSEM paper.  Note that since we are using a much simpler syntax,
-   only a few of the rules are applicable, namely C-C-Swap, C-C-Merge,
-   C-Idemp, and C-S.  I also provide proofs of the reflexivity,
-   symmetry, and transitivity of semantic equivalence. *)
-Section Transform.
+(* Proofs of the semantic equivalence laws from the TOSEM paper.
+   Note that since we are using a much simpler syntax, only a few
+   of the rules are applicable, namely C-C-Swap, C-C-Merge, C-Idemp,
+   and C-S.  I also provide proofs of the reflexivity, symmetry, and
+   transitivity of semantic equivalence. The congruence rule in the
+   paper is split into two rules for choice and tree congruence. *)
+Section Equivalence.
 
 (* Two expressions are semantically equivalent if they yield the same
    plain trees for all possible selections. *)
@@ -124,6 +125,26 @@ Proof.
   unfold equiv. intros s. unfold sem.
   destruct (s d); reflexivity. Qed.
 
+(* Choice congruence rule. *)
+Theorem cong_c d e1 e2 e3 e4 :
+  e1 <=> e3 /\ e2 <=> e4 -> chc d e1 e2 <=> chc d e3 e4.
+Proof.
+  unfold equiv. intros H.
+  elim H. intros H1 H2 s.
+  unfold sem. destruct (s d).
+  fold sem. apply H1.
+  fold sem. apply H2. Qed.
+
+(* Object language congruence rule. *)
+Theorem tree_c a e1 e2 e3 e4 :
+  e1 <=> e3 /\ e2 <=> e4 -> node a e1 e2 <=> node a e3 e4.
+Proof.
+  unfold equiv. intros H.
+  elim H. intros H1 H2 s.
+  unfold sem. destruct (s d).
+  fold sem. apply H1.
+  fold sem. apply H2. Qed.
+
 (* Reflexivity of semantic equivalence. *)
 Theorem equiv_refl e :
   e <=> e.
@@ -144,12 +165,7 @@ Proof.
   elim H. intros H1 H2 s.
   rewrite -> H1. rewrite <- H2. reflexivity. Qed.
 
-(* 
-Theorem equiv_cong e e' :
-  forall (C:cc -> cc), e <=> e' -> C e <=> C e'.
-*)
-
-End Transform.
+End Equivalence.
 
 
 
